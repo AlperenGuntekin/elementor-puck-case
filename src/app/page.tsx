@@ -98,6 +98,16 @@ export default function Home() {
               <ArrowForwardIcon className="ml-2 group-hover:translate-x-1 transition-transform" sx={{ fontSize: 20 }} />
             </span>
           </Link>
+          <Link
+            href="/test-converter-simple"
+            className="group bg-gradient-to-r from-purple-600 to-purple-700 text-white px-10 py-5 rounded-2xl font-bold text-xl hover:from-purple-700 hover:to-purple-800 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105"
+          >
+            <span className="flex items-center justify-center">
+              <MenuBookIcon sx={{ fontSize: 24, mr: 1 }} />
+              Simple Test
+              <ArrowForwardIcon className="ml-2 group-hover:translate-x-1 transition-transform" sx={{ fontSize: 20 }} />
+            </span>
+          </Link>
           <a
             href="https://puckeditor.com/docs/getting-started"
             target="_blank"
