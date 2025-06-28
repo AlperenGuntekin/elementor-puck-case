@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useEffect, useState, useRef, useImperativeHandle, forwardRef } from 'react';
+import React, { forwardRef, useImperativeHandle, useState, useEffect, useMemo, useCallback } from 'react';
 import { Puck, Config } from '@measured/puck';
 import { ElementorData, PuckData } from '../types';
 import { JsonToPuckConverter } from '../converter/json-to-puck';
@@ -24,35 +24,32 @@ export interface PuckEditorRef {
 
 const PuckEditor = forwardRef<PuckEditorRef, PuckEditorProps>(({ elementorData, onPublish }, ref) => {
   const converter = useMemo(() => new JsonToPuckConverter(), []);
-  const [currentPuckData, setCurrentPuckData] = useState<PuckData>(() => converter.convert(elementorData));
-  
+  const [puckData, setPuckData] = useState<PuckData>(() => converter.convert(elementorData));
+  const [puckKey, setPuckKey] = useState(0);
+
   useImperativeHandle(ref, () => ({
-    getCurrentData: () => currentPuckData,
+    getCurrentData: () => puckData,
     publish: () => {
-      const convertedElementorData = converter.convertBack(currentPuckData);
-      onPublish(convertedElementorData);
+      const elementorDataBack = converter.convertBack(puckData);
+      onPublish(elementorDataBack);
     }
   }));
 
-  const puckData = useMemo(() => {
-    const converted = converter.convert(elementorData);
-    setCurrentPuckData(converted); 
-    return converted;
-  }, [elementorData, converter]);
+  const handlePuckPublish = useCallback((data: unknown) => {
+    const elementorDataBack = converter.convertBack(data as PuckData);
+    onPublish(elementorDataBack);
+  }, [converter, onPublish]);
 
-  const puckKey = useMemo(() => {
-    return `puck-${JSON.stringify(elementorData).length}-${Date.now()}`;
-  }, [elementorData]);
-
-  const handlePuckPublish = (data: any) => {
-    setCurrentPuckData(data);
-    const convertedElementorData = converter.convertBack(data);
-    onPublish(convertedElementorData);
-  };
-
-  const handlePuckChange = (data: any) => {
-    setCurrentPuckData(data);
-  };
+  const handlePuckChange = useCallback((data: unknown) => {
+    // Only update if data actually changed to prevent unnecessary re-renders
+    const newData = data as PuckData;
+    setPuckData(prevData => {
+      if (JSON.stringify(prevData) !== JSON.stringify(newData)) {
+        return newData;
+      }
+      return prevData;
+    });
+  }, []);
 
   const config: Config = {
     components: {
@@ -155,7 +152,7 @@ const PuckEditor = forwardRef<PuckEditorRef, PuckEditorProps>(({ elementorData, 
 
           return (
             <div 
-              className={`grid ${gapClasses[gap]} md:grid-cols-2`}
+              className={`grid ${gapClasses[gap]} grid-cols-2`}
               style={{ 
                 gridTemplateColumns: ratio,
                 display: 'grid'
@@ -203,7 +200,7 @@ const PuckEditor = forwardRef<PuckEditorRef, PuckEditorProps>(({ elementorData, 
           };
 
           return (
-            <div className={`grid ${gapClasses[gap]} md:grid-cols-3`}>
+            <div className={`grid ${gapClasses[gap]} grid-cols-3`}>
               <LeftColumn />
               <CenterColumn />
               <RightColumn />
@@ -251,11 +248,11 @@ const PuckEditor = forwardRef<PuckEditorRef, PuckEditorProps>(({ elementorData, 
           };
 
           const gridCols: Record<string, string> = {
-            '2': 'md:grid-cols-2',
-            '3': 'md:grid-cols-3',
-            '4': 'md:grid-cols-4',
-            '5': 'md:grid-cols-5',
-            '6': 'md:grid-cols-6'
+            '2': 'grid-cols-2',
+            '3': 'grid-cols-3',
+            '4': 'grid-cols-4',
+            '5': 'grid-cols-5',
+            '6': 'grid-cols-6'
           };
 
           return (
@@ -463,10 +460,27 @@ const PuckEditor = forwardRef<PuckEditorRef, PuckEditorProps>(({ elementorData, 
     }
   };
 
+  useEffect(() => {
+    const updatedPuckData = converter.convert(elementorData);
+    setPuckData(prevData => {
+      if (JSON.stringify(prevData) !== JSON.stringify(updatedPuckData)) {
+        return updatedPuckData;
+      }
+      return prevData;
+    });
+    setPuckKey(prev => prev + 1);
+  }, [elementorData, converter]);
+
   return (
     <div className="w-full h-full min-h-0 flex flex-col" >
       <main className="flex-1 h-full min-h-0 flex flex-col" >
-        <Puck config={config} data={puckData} onPublish={handlePuckPublish} onChange={handlePuckChange} key={puckKey}>
+        <Puck 
+          config={config} 
+          data={puckData} 
+          onPublish={handlePuckPublish} 
+          onChange={handlePuckChange} 
+          key={`puck-${puckKey}`}
+        >
           <div className="flex w-full h-full min-h-0 flex-col md:flex-row">
             {/* Components */}
             <aside className="w-72 min-w-[16rem] max-w-xs bg-white border-b md:border-b-0 md:border-r border-gray-200 p-4 flex flex-col !bg-white">
@@ -505,5 +519,7 @@ const PuckEditor = forwardRef<PuckEditorRef, PuckEditorProps>(({ elementorData, 
     </div>
   );
 });
+
+PuckEditor.displayName = 'PuckEditor';
 
 export default PuckEditor; 

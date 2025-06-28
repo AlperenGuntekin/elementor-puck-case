@@ -286,16 +286,16 @@ export class JsonToPuckConverter {
       const layoutContent = JSON.parse(widget.settings.layout_content || '[]');
       const layoutProps = JSON.parse(widget.settings.layout_props || '{}');
       
-      const convertedContent = layoutContent.map((item: any) => {
-        if (typeof item === 'object' && item.type) {
-          return item; 
+      const convertedContent = layoutContent.map((item: unknown) => {
+        if (typeof item === 'object' && item !== null && 'type' in item) {
+          return item as PuckElement; 
         } else {
-          return this.convertWidget(item);
+          return this.convertWidget(item as ElementorWidget);
         }
       });
 
       const layoutType = layoutProps.type || 'Container';
-      const props: any = {
+      const props: PuckProps = {
         id: widget.id,
         gap: layoutProps.gap || 'md',
         ratio: layoutProps.ratio || '1fr 1fr',

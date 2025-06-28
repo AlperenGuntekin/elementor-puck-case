@@ -124,7 +124,7 @@ const TestConverter: React.FC = () => {
           const json = JSON.parse(event.target?.result as string);
           
           if (!json.content || !Array.isArray(json.content)) {
-            showNotification('Invalid Elementor JSON structure! File must contain a "content" array.', 'error');
+            showNotification('Invalid Elementor JSON structure! File must contain a &quot;content&quot; array.', 'error');
             return;
           }
           
@@ -134,7 +134,7 @@ const TestConverter: React.FC = () => {
           if (fileInputRef.current) {
             fileInputRef.current.value = '';
           }
-        } catch (error) {
+        } catch {
           showNotification('Invalid JSON file! Please check the file format.', 'error');
         }
       };
@@ -216,67 +216,67 @@ const TestConverter: React.FC = () => {
     }
   };
 
-  const renderPuckComponent = (element: any) => {
+  const renderPuckComponent = (element: { type: string; props: Record<string, unknown> }): React.ReactNode => {
     const { type, props } = element;
     
     switch (type) {
       case 'HeadingBlock':
         return (
-          <div key={props.id} className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div key={props.id as string} className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <HeadingBlock 
-              id={props.id}
-              title={props.children || 'Heading'}
-              header_size={props.level || 'h2'}
-              align={props.alignment || 'left'}
+              id={props.id as string}
+              title={props.children as string || 'Heading'}
+              header_size={(props.level as string || 'h2') as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'}
+              align={(props.alignment as string || 'left') as 'left' | 'center' | 'right'}
             />
           </div>
         );
       case 'TextBlock':
         return (
-          <div key={props.id} className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div key={props.id as string} className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
             <TextBlock 
-              id={props.id}
-              text={props.children || 'Enter your text here...'}
-              align={props.alignment || 'left'}
+              id={props.id as string}
+              text={props.children as string || 'Enter your text here...'}
+              align={(props.alignment as string || 'left') as 'left' | 'center' | 'right'}
             />
           </div>
         );
       case 'ButtonBlock':
         return (
-          <div key={props.id} className="mb-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+          <div key={props.id as string} className="mb-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
             <ButtonBlock
-              id={props.id}
-              text={props.children || 'Button'}
-              url={props.href || '#'}
-              button_type={props.variant || 'primary'}
-              align={props.alignment || 'left'}
+              id={props.id as string}
+              text={props.children as string || 'Button'}
+              url={props.href as string || '#'}
+              button_type={(props.variant as string || 'primary') as 'primary' | 'secondary' | 'outline'}
+              align={(props.alignment as string || 'left') as 'left' | 'center' | 'right'}
             />
           </div>
         );
       case 'IconBlock':
         return (
-          <div key={props.id} className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <div key={props.id as string} className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
               <span className="font-semibold text-yellow-800">Icon:</span>
-              <span className="text-sm text-gray-600">{props.icon || 'StarIcon'}</span>
+              <span className="text-sm text-gray-600">{props.icon as string || 'StarIcon'}</span>
             </div>
             <div 
               className={`inline-block ${props.size === 'small' ? 'text-2xl' : props.size === 'large' ? 'text-6xl' : 'text-4xl'}`}
               style={{ 
-                color: props.color || '#3B82F6',
-                textAlign: props.alignment || 'left'
+                color: props.color as string || '#3B82F6',
+                textAlign: (props.alignment as string || 'left') as 'left' | 'center' | 'right'
               }}
             >
-              {getMuiIcon(props.icon || 'StarIcon')}
+              {getMuiIcon(props.icon as string || 'StarIcon')}
             </div>
           </div>
         );
       case 'Container':
         return (
-          <div key={props.id} className="mb-4 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
+          <div key={props.id as string} className="mb-4 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
             <div className="font-semibold text-indigo-800 mb-2">Container</div>
             <div className="space-y-2">
-              {props.content && props.content.map((child: any, index: number) => (
+              {(props.content as Array<{ type: string; props: Record<string, unknown> }> | undefined)?.map((child: { type: string; props: Record<string, unknown> }, index: number) => (
                 <div key={index} className="ml-4">
                   {renderPuckComponent(child)}
                 </div>
@@ -286,13 +286,13 @@ const TestConverter: React.FC = () => {
         );
       case 'TwoColumn':
         return (
-          <div key={props.id} className="mb-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+          <div key={props.id as string} className="mb-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
             <div className="font-semibold text-orange-800 mb-2">Two Column Layout</div>
             <div className="grid md:grid-cols-2 gap-4">
               <div className="bg-white p-3 rounded border">
                 <div className="text-sm font-medium text-gray-600 mb-2">Left Column:</div>
                 <div className="space-y-2">
-                  {props.leftColumn && props.leftColumn.map((child: any, index: number) => (
+                  {(props.leftColumn as Array<{ type: string; props: Record<string, unknown> }> | undefined)?.map((child: { type: string; props: Record<string, unknown> }, index: number) => (
                     <div key={index}>
                       {renderPuckComponent(child)}
                     </div>
@@ -302,7 +302,7 @@ const TestConverter: React.FC = () => {
               <div className="bg-white p-3 rounded border">
                 <div className="text-sm font-medium text-gray-600 mb-2">Right Column:</div>
                 <div className="space-y-2">
-                  {props.rightColumn && props.rightColumn.map((child: any, index: number) => (
+                  {(props.rightColumn as Array<{ type: string; props: Record<string, unknown> }> | undefined)?.map((child: { type: string; props: Record<string, unknown> }, index: number) => (
                     <div key={index}>
                       {renderPuckComponent(child)}
                     </div>
@@ -314,13 +314,13 @@ const TestConverter: React.FC = () => {
         );
       case 'ThreeColumn':
         return (
-          <div key={props.id} className="mb-4 p-4 bg-pink-50 border border-pink-200 rounded-lg">
+          <div key={props.id as string} className="mb-4 p-4 bg-pink-50 border border-pink-200 rounded-lg">
             <div className="font-semibold text-pink-800 mb-2">Three Column Layout</div>
             <div className="grid md:grid-cols-3 gap-4">
               <div className="bg-white p-3 rounded border">
                 <div className="text-sm font-medium text-gray-600 mb-2">Left Column:</div>
                 <div className="space-y-2">
-                  {props.leftColumn && props.leftColumn.map((child: any, index: number) => (
+                  {(props.leftColumn as Array<{ type: string; props: Record<string, unknown> }> | undefined)?.map((child: { type: string; props: Record<string, unknown> }, index: number) => (
                     <div key={index}>
                       {renderPuckComponent(child)}
                     </div>
@@ -330,7 +330,7 @@ const TestConverter: React.FC = () => {
               <div className="bg-white p-3 rounded border">
                 <div className="text-sm font-medium text-gray-600 mb-2">Center Column:</div>
                 <div className="space-y-2">
-                  {props.centerColumn && props.centerColumn.map((child: any, index: number) => (
+                  {(props.centerColumn as Array<{ type: string; props: Record<string, unknown> }> | undefined)?.map((child: { type: string; props: Record<string, unknown> }, index: number) => (
                     <div key={index}>
                       {renderPuckComponent(child)}
                     </div>
@@ -340,7 +340,7 @@ const TestConverter: React.FC = () => {
               <div className="bg-white p-3 rounded border">
                 <div className="text-sm font-medium text-gray-600 mb-2">Right Column:</div>
                 <div className="space-y-2">
-                  {props.rightColumn && props.rightColumn.map((child: any, index: number) => (
+                  {(props.rightColumn as Array<{ type: string; props: Record<string, unknown> }> | undefined)?.map((child: { type: string; props: Record<string, unknown> }, index: number) => (
                     <div key={index}>
                       {renderPuckComponent(child)}
                     </div>
@@ -352,10 +352,10 @@ const TestConverter: React.FC = () => {
         );
       case 'Grid':
         return (
-          <div key={props.id} className="mb-4 p-4 bg-teal-50 border border-teal-200 rounded-lg">
-            <div className="font-semibold text-teal-800 mb-2">Grid Layout ({props.columns || 3} columns)</div>
+          <div key={props.id as string} className="mb-4 p-4 bg-teal-50 border border-teal-200 rounded-lg">
+            <div className="font-semibold text-teal-800 mb-2">Grid Layout ({String(props.columns || 3)} columns)</div>
             <div className="grid md:grid-cols-3 gap-4">
-              {props.content && props.content.map((child: any, index: number) => (
+              {(props.content as Array<{ type: string; props: Record<string, unknown> }> | undefined)?.map((child: { type: string; props: Record<string, unknown> }, index: number) => (
                 <div key={index} className="bg-white p-3 rounded border">
                   {renderPuckComponent(child)}
                 </div>
@@ -365,7 +365,7 @@ const TestConverter: React.FC = () => {
         );
       default:
         return (
-          <div key={props.id} className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+          <div key={props.id as string} className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
             <div className="font-semibold">Unknown component: {type}</div>
             <div className="text-sm mt-1">Props: {JSON.stringify(props, null, 2)}</div>
           </div>
@@ -449,11 +449,15 @@ const TestConverter: React.FC = () => {
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Puck Preview</h3>
             {convertedData ? (
               <div className="space-y-4">
-                {convertedData.content.map(renderPuckComponent)}
+                {convertedData.content.map((element, index) => (
+                  <div key={index}>
+                    {renderPuckComponent(element as { type: string; props: Record<string, unknown> })}
+                  </div>
+                ))}
               </div>
             ) : (
               <div className="text-center py-12 text-gray-500">
-                <p>Click "Convert to Puck" to see the preview</p>
+                <p>Click &quot;Convert to Puck&quot; to see the preview</p>
               </div>
             )}
           </div>

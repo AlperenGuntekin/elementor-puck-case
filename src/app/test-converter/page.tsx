@@ -1,135 +1,134 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { ElementorData } from '../../types';
-import PuckEditor, { PuckEditorRef } from '@/components/PuckEditor';
+import { Button, Alert, Collapse } from '@mui/material';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
+import PublishIcon from '@mui/icons-material/Publish';
 import WidgetsIcon from '@mui/icons-material/Widgets';
 import SettingsIcon from '@mui/icons-material/Settings';
-import PublishIcon from '@mui/icons-material/Publish';
-import UploadFileIcon from '@mui/icons-material/UploadFile';
-import Button from '@mui/material/Button';
-import Alert from '@mui/material/Alert';
-import Collapse from '@mui/material/Collapse';
-
-const initialElementorData: ElementorData = {
-  content: [
-    {
-      id: "3ab5483",
-      settings: {
-        title: "What we do",
-        header_size: "h6",
-        align: "left"
-      },
-      widgetType: "heading",
-      elType: "widget"
-    },
-    {
-      id: "2ab32d24",
-      settings: {
-        title: "We build awesome themes",
-        header_size: "h2",
-        align: "left"
-      },
-      widgetType: "heading",
-      elType: "widget"
-    },
-    {
-      id: "6475a8c5",
-      settings: {
-        text: "Learn more"
-      },
-      widgetType: "button",
-      elType: "widget"
-    },
-    {
-      id: "166beb3",
-      settings: {
-        selected_icon: {
-          value: "fas fa-star-of-life"
-        },
-        align: "left"
-      },
-      widgetType: "icon",
-      elType: "widget"
-    },
-    {
-      id: "5388efac",
-      settings: {
-        editor: "Habitant faucibus sollicitudin fames..."
-      },
-      widgetType: "text-editor",
-      elType: "widget"
-    }
-  ],
-  title: "Test Page"
-};
+import PuckEditor, { PuckEditorRef } from '../../components/PuckEditor';
+import { ElementorData } from '../../types';
 
 const EditorPage: React.FC = () => {
-  const [elementorData, setElementorData] = useState<ElementorData>(initialElementorData);
+  const [elementorData, setElementorData] = useState<ElementorData>({
+    title: 'Test Page',
+    content: [
+      {
+        id: "3ab5483",
+        settings: {
+          title: "What we do",
+          header_size: "h6",
+          align: "left"
+        },
+        widgetType: "heading",
+        elType: "widget"
+      },
+      {
+        id: "2ab32d24",
+        settings: {
+          title: "We build awesome themes",
+          header_size: "h2",
+          align: "left"
+        },
+        widgetType: "heading",
+        elType: "widget"
+      },
+      {
+        id: "6475a8c5",
+        settings: {
+          text: "Learn more"
+        },
+        widgetType: "button",
+        elType: "widget"
+      },
+      {
+        id: "166beb3",
+        settings: {
+          selected_icon: {
+            value: "fas fa-star-of-life"
+          },
+          align: "left"
+        },
+        widgetType: "icon",
+        elType: "widget"
+      },
+      {
+        id: "5388efac",
+        settings: {
+          editor: "Habitant faucibus sollicitudin fames..."
+        },
+        widgetType: "text-editor",
+        elType: "widget"
+      }
+    ],
+  });
+
   const [publishedElementor, setPublishedElementor] = useState<ElementorData | null>(null);
-  const [showAlert, setShowAlert] = useState<string | null>(null);
-  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [showAlert, setShowAlert] = useState<string>('');
+  const [uploadError, setUploadError] = useState<string>('');
+  const puckEditorRef = useRef<PuckEditorRef>(null);
   const outputRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const puckEditorRef = useRef<PuckEditorRef>(null);
 
   const handlePublish = (data: ElementorData) => {
     setPublishedElementor(data);
-    setShowAlert('Published successfully!');
-    setTimeout(() => setShowAlert(null), 2000);
-    setTimeout(() => {
-      outputRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 300);
+    setShowAlert('Content published successfully!');
+    setTimeout(() => setShowAlert(''), 3000);
+    
+    if (outputRef.current) {
+      outputRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   const handleCopy = () => {
     if (publishedElementor) {
       navigator.clipboard.writeText(JSON.stringify(publishedElementor, null, 2));
-      setShowAlert('Copied to clipboard!');
-      setTimeout(() => setShowAlert(null), 2000);
+      setShowAlert('JSON copied to clipboard!');
+      setTimeout(() => setShowAlert(''), 3000);
     }
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        try {
-          const json = JSON.parse(event.target?.result as string);
-          
-          if (!json.content || !Array.isArray(json.content)) {
-            setUploadError('Invalid Elementor JSON structure! File must contain a "content" array.');
-            return;
-          }
-          
-          const validWidgets = json.content.filter((item: any) => 
-            item && typeof item === 'object' && 
-            item.widgetType && item.settings
-          );
-          
-          if (validWidgets.length === 0) {
-            setUploadError('No valid widgets found in the JSON file!');
-            return;
-          }
-          
-          setElementorData(json);
-          setUploadError(null);
-          setShowAlert(`Elementor JSON loaded successfully! ${validWidgets.length} widgets found.`);
-          setTimeout(() => setShowAlert(null), 3000);
-          
-          if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-          }
-        } catch (error) {
-          setUploadError('Invalid JSON file! Please check the file format.');
+    if (!file) return;
+
+    setUploadError('');
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const json = JSON.parse(event.target?.result as string);
+        
+        if (!json.content || !Array.isArray(json.content)) {
+          setUploadError('Invalid Elementor JSON structure! File must contain a "content" array.');
+          return;
         }
-      };
-      reader.onerror = () => {
-        setUploadError('Error reading file! Please try again.');
-      };
-      reader.readAsText(file);
-    }
+        
+        const validWidgets = json.content.filter((item: unknown) => 
+          item && typeof item === 'object' && 
+          (item as Record<string, unknown>).widgetType && (item as Record<string, unknown>).settings
+        );
+        
+        if (validWidgets.length === 0) {
+          setUploadError('No valid widgets found in the JSON file!');
+          return;
+        }
+        
+        setElementorData(json);
+        setUploadError('');
+        setShowAlert(`Elementor JSON loaded successfully! ${validWidgets.length} widgets found.`);
+        setTimeout(() => setShowAlert(''), 3000);
+        
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      } catch {
+        setUploadError('Invalid JSON file! Please check the file format.');
+      }
+    };
+    reader.onerror = () => {
+      setUploadError('Error reading file! Please try again.');
+    };
+    reader.readAsText(file);
   };
 
   return (

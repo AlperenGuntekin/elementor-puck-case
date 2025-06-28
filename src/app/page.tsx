@@ -128,7 +128,7 @@ export default function Home() {
             Quick Start
           </h3>
           <p className="text-gray-700 mb-4">
-            Click on "Launch Editor" to start creating and editing your Elementor data with our visual interface.
+            Click on &quot;Launch Editor&quot; to start creating and editing your Elementor data with our visual interface.
           </p>
           <div className="text-sm text-gray-600">
             <p className="flex items-center gap-2">
