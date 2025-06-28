@@ -33,7 +33,9 @@ export class JsonToPuckConverter {
   convert(elementorData: ElementorData): PuckData {
     return {
       content: elementorData.content.map(widget => this.convertWidget(widget)),
-      root: { title: elementorData.title }
+      root: { 
+        props: { title: elementorData.title || 'Page Title' }
+      }
     };
   }
 
@@ -41,7 +43,7 @@ export class JsonToPuckConverter {
   convertBack(puckData: PuckData): ElementorData {
     return {
       content: puckData.content.map(element => this.convertElementBack(element)),
-      title: puckData.root?.title || 'Untitled'
+      title: puckData.root?.props?.title || 'Untitled'
     };
   }
 

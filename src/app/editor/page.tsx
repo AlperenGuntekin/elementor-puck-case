@@ -1,8 +1,15 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { ElementorData } from '../../types';
-import PuckEditor from '@/components/PuckEditor';
+import PuckEditor, { PuckEditorRef } from '@/components/PuckEditor';
+import WidgetsIcon from '@mui/icons-material/Widgets';
+import SettingsIcon from '@mui/icons-material/Settings';
+import PublishIcon from '@mui/icons-material/Publish';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
+import Button from '@mui/material/Button';
+import Alert from '@mui/material/Alert';
+import Collapse from '@mui/material/Collapse';
 
 const initialElementorData: ElementorData = {
   content: [
@@ -60,10 +67,69 @@ const initialElementorData: ElementorData = {
 const EditorPage: React.FC = () => {
   const [elementorData, setElementorData] = useState<ElementorData>(initialElementorData);
   const [publishedElementor, setPublishedElementor] = useState<ElementorData | null>(null);
+  const [showAlert, setShowAlert] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const outputRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const puckEditorRef = useRef<PuckEditorRef>(null);
 
   const handlePublish = (data: ElementorData) => {
     setPublishedElementor(data);
-    console.log('✅ Elementor verisi başarıyla dönüştürüldü:', data);
+    setShowAlert('Published successfully!');
+    setTimeout(() => setShowAlert(null), 2000);
+    setTimeout(() => {
+      outputRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 300);
+  };
+
+  const handleCopy = () => {
+    if (publishedElementor) {
+      navigator.clipboard.writeText(JSON.stringify(publishedElementor, null, 2));
+      setShowAlert('Copied to clipboard!');
+      setTimeout(() => setShowAlert(null), 2000);
+    }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const json = JSON.parse(event.target?.result as string);
+          
+          if (!json.content || !Array.isArray(json.content)) {
+            setUploadError('Invalid Elementor JSON structure! File must contain a "content" array.');
+            return;
+          }
+          
+          const validWidgets = json.content.filter((item: any) => 
+            item && typeof item === 'object' && 
+            item.widgetType && item.settings
+          );
+          
+          if (validWidgets.length === 0) {
+            setUploadError('No valid widgets found in the JSON file!');
+            return;
+          }
+          
+          setElementorData(json);
+          setUploadError(null);
+          setShowAlert(`Elementor JSON loaded successfully! ${validWidgets.length} widgets found.`);
+          setTimeout(() => setShowAlert(null), 3000);
+          
+          if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+          }
+        } catch (error) {
+          setUploadError('Invalid JSON file! Please check the file format.');
+        }
+      };
+      reader.onerror = () => {
+        setUploadError('Error reading file! Please try again.');
+      };
+      reader.readAsText(file);
+    }
   };
 
   return (
@@ -77,7 +143,7 @@ const EditorPage: React.FC = () => {
                 Puck Editor
               </h1>
               <p className="text-gray-600 mt-2 text-lg">
-                Elementor içeriğini interaktif olarak düzenleyin ve tekrar Elementor formatına çevirin
+                Edit your Elementor data interactively and convert it back to Elementor format
               </p>
             </div>
             <div className="text-right">
@@ -89,68 +155,123 @@ const EditorPage: React.FC = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Collapse in={!!showAlert}>
+          {showAlert && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              {showAlert}
+            </Alert>
+          )}
+        </Collapse>
         <div className="mb-8 bg-white rounded-xl shadow-lg border border-gray-200 p-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
             <span className="text-2xl">📋</span>
-            Nasıl Kullanılır
+            How to Use
           </h2>
           <div className="grid md:grid-cols-3 gap-4 text-sm text-gray-600">
             <div className="flex items-start gap-3">
               <div className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold">1</div>
               <div>
-                <div className="font-semibold text-gray-800">Sol panelden widget'ları sürükleyin</div>
-                <div>Heading, Text, Button, Icon bileşenlerini kullanabilirsiniz</div>
+                <div className="font-semibold text-gray-800">Drag widgets from the left panel</div>
+                <div>You can use Heading, Text, Button, Icon components</div>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-xs font-bold">2</div>
               <div>
-                <div className="font-semibold text-gray-800">Sağ panelden özellikleri düzenleyin</div>
-                <div>Metin, renk, boyut ve diğer ayarları değiştirin</div>
+                <div className="font-semibold text-gray-800">Edit properties from the right panel</div>
+                <div>Change text, color, size and other settings</div>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <div className="w-6 h-6 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center text-xs font-bold">3</div>
               <div>
-                <div className="font-semibold text-gray-800">Publish butonuna tıklayın</div>
-                <div>Düzenlenen içerik Elementor formatına dönüştürülecek</div>
+                <div className="font-semibold text-gray-800">Click the Publish button</div>
+                <div>The edited content will be converted back to Elementor format</div>
               </div>
             </div>
           </div>
         </div>
 
+        <div className="mb-4 flex items-center gap-2">
+          <Button
+            variant="outlined"
+            component="label"
+            startIcon={<UploadFileIcon />}
+            color="primary"
+          >
+            Upload Elementor JSON
+            <input
+              type="file"
+              accept="application/json"
+              hidden
+              onChange={handleFileUpload}
+              ref={fileInputRef}
+            />
+          </Button>
+          <Collapse in={!!uploadError}>
+            {uploadError && (
+              <Alert severity="error" sx={{ ml: 2 }}>
+                {uploadError}
+              </Alert>
+            )}
+          </Collapse>
+        </div>
+
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
           <div className="bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-4">
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <span className="text-2xl">✏️</span>
-              Puck Editor
-            </h2>
-            <p className="text-blue-100 mt-1">Elementor verilerinizi burada düzenleyin</p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">✏️</span>
+                <h2 className="text-xl font-bold text-white">Puck Editor</h2>
+              </div>
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<PublishIcon />}
+                onClick={() => {
+                  puckEditorRef.current?.publish();
+                }}
+                sx={{
+                  backgroundColor: 'white',
+                  color: '#3B82F6',
+                  '&:hover': {
+                    backgroundColor: '#f8fafc',
+                  }
+                }}
+              >
+                Publish
+              </Button>
+            </div>
           </div>
           <div className="p-4">
-            <PuckEditor elementorData={elementorData} onPublish={handlePublish} />
+            <PuckEditor ref={puckEditorRef} elementorData={elementorData} onPublish={handlePublish} />
           </div>
         </div>
 
         {publishedElementor && (
-          <div className="mt-8 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+          <div
+            ref={outputRef}
+            className="mt-8 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden"
+          >
             <div className="bg-gradient-to-r from-green-500 to-emerald-600 px-6 py-4">
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
                 <span className="text-2xl">✅</span>
-                Yayınlanan Elementor JSON
+                Published Elementor JSON
               </h2>
-              <p className="text-green-100 mt-1">Düzenlenen içeriğin tekrar Elementor formatına dönüştürülmüş hali</p>
+              <p className="text-green-100 mt-1">The edited content converted back to Elementor format</p>
             </div>
             <div className="p-6">
               <div className="bg-gray-900 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-4">
                   <div className="text-yellow-400 font-semibold">Elementor JSON Output</div>
-                  <button 
-                    onClick={() => navigator.clipboard.writeText(JSON.stringify(publishedElementor, null, 2))}
-                    className="px-3 py-1 bg-gray-700 text-white text-sm rounded hover:bg-gray-600 transition-colors"
+                  <Button
+                    variant="outlined"
+                    color="success"
+                    size="small"
+                    onClick={handleCopy}
                   >
-                    📋 Kopyala
-                  </button>
+                    Copy
+                  </Button>
                 </div>
                 <pre className="text-yellow-400 text-sm overflow-auto max-h-96 font-mono leading-relaxed">
                   {JSON.stringify(publishedElementor, null, 2)}
@@ -162,24 +283,35 @@ const EditorPage: React.FC = () => {
 
         <div className="mt-8 bg-white rounded-xl shadow-lg border border-gray-200 p-6">
           <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <span className="text-xl">📊</span>
-            Durum
+            <WidgetsIcon className="text-blue-600" />
+            Input Data
           </h3>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="font-semibold text-blue-800">Giriş Verisi</div>
-              <div className="text-sm text-blue-600 mt-1">
-                {elementorData.content.length} widget yüklendi
-              </div>
-            </div>
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <div className="font-semibold text-green-800">Çıkış Verisi</div>
-              <div className="text-sm text-green-600 mt-1">
-                {publishedElementor ? `${publishedElementor.content.length} widget dönüştürüldü` : 'Henüz yayınlanmadı'}
-              </div>
-            </div>
+          <div className="text-sm text-blue-600 mt-1">
+            {elementorData.content.length} widgets loaded
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 mt-6">
+            <SettingsIcon className="text-green-600" />
+            Output Data
+          </h3>
+          <div className="text-sm text-green-600 mt-1">
+            {publishedElementor ? `${publishedElementor.content.length} widgets converted` : 'Not published yet'}
           </div>
         </div>
+
+        <textarea
+          className="w-full border rounded p-2 mb-2"
+          rows={6}
+          placeholder="Paste your Elementor JSON here"
+          onBlur={(e) => {
+            try {
+              const json = JSON.parse(e.target.value);
+              setElementorData(json);
+              setShowAlert('Elementor JSON loaded!');
+            } catch {
+              setShowAlert('Invalid JSON!');
+            }
+          }}
+        />
       </div>
     </div>
   );

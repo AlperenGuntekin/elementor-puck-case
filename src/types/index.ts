@@ -45,7 +45,9 @@ export interface PuckProps {
 export interface PuckData {
   content: PuckElement[];
   root: {
-    title: string;
+    props: {
+      title: string;
+    };
   };
 }
 
