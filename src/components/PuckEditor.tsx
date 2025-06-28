@@ -11,8 +11,6 @@ import IconBlock from './IconBlock';
 import '@measured/puck/puck.css';
 import WidgetsIcon from '@mui/icons-material/Widgets';
 import SettingsIcon from '@mui/icons-material/Settings';
-import { Button } from '@mui/material';
-import PublishIcon from '@mui/icons-material/Publish';
 
 interface PuckEditorProps {
   elementorData: ElementorData;
@@ -58,6 +56,215 @@ const PuckEditor = forwardRef<PuckEditorRef, PuckEditorProps>(({ elementorData, 
 
   const config: Config = {
     components: {
+      Container: {
+        label: 'Container',
+        fields: {
+          content: {
+            type: 'slot',
+            label: 'Content'
+          },
+          maxWidth: {
+            type: 'select',
+            label: 'Max Width',
+            options: [
+              { label: 'Full Width', value: 'full' },
+              { label: 'Large', value: 'lg' },
+              { label: 'Medium', value: 'md' },
+              { label: 'Small', value: 'sm' }
+            ]
+          },
+          padding: {
+            type: 'select',
+            label: 'Padding',
+            options: [
+              { label: 'None', value: 'none' },
+              { label: 'Small', value: 'sm' },
+              { label: 'Medium', value: 'md' },
+              { label: 'Large', value: 'lg' }
+            ]
+          }
+        },
+        defaultProps: {
+          maxWidth: 'lg',
+          padding: 'md'
+        },
+        render: ({ content: Content, maxWidth, padding }) => {
+          const maxWidthClasses: Record<string, string> = {
+            full: 'w-full',
+            lg: 'max-w-7xl',
+            md: 'max-w-4xl',
+            sm: 'max-w-2xl'
+          };
+          
+          const paddingClasses: Record<string, string> = {
+            none: 'p-0',
+            sm: 'p-4',
+            md: 'p-8',
+            lg: 'p-12'
+          };
+
+          return (
+            <div className={`mx-auto ${maxWidthClasses[maxWidth]} ${paddingClasses[padding]}`}>
+              <Content />
+            </div>
+          );
+        }
+      },
+      TwoColumn: {
+        label: 'Two Column',
+        fields: {
+          leftColumn: {
+            type: 'slot',
+            label: 'Left Column'
+          },
+          rightColumn: {
+            type: 'slot',
+            label: 'Right Column'
+          },
+          gap: {
+            type: 'select',
+            label: 'Gap',
+            options: [
+              { label: 'Small', value: 'sm' },
+              { label: 'Medium', value: 'md' },
+              { label: 'Large', value: 'lg' }
+            ]
+          },
+          ratio: {
+            type: 'select',
+            label: 'Column Ratio',
+            options: [
+              { label: '50/50', value: '1fr 1fr' },
+              { label: '60/40', value: '2fr 1fr' },
+              { label: '40/60', value: '1fr 2fr' },
+              { label: '70/30', value: '3fr 1fr' },
+              { label: '30/70', value: '1fr 3fr' }
+            ]
+          }
+        },
+        defaultProps: {
+          gap: 'md',
+          ratio: '1fr 1fr'
+        },
+        render: ({ leftColumn: LeftColumn, rightColumn: RightColumn, gap, ratio }) => {
+          const gapClasses: Record<string, string> = {
+            sm: 'gap-4',
+            md: 'gap-8',
+            lg: 'gap-12'
+          };
+
+          return (
+            <div 
+              className={`grid ${gapClasses[gap]} md:grid-cols-2`}
+              style={{ 
+                gridTemplateColumns: ratio,
+                display: 'grid'
+              }}
+            >
+              <LeftColumn />
+              <RightColumn />
+            </div>
+          );
+        }
+      },
+      ThreeColumn: {
+        label: 'Three Column',
+        fields: {
+          leftColumn: {
+            type: 'slot',
+            label: 'Left Column'
+          },
+          centerColumn: {
+            type: 'slot',
+            label: 'Center Column'
+          },
+          rightColumn: {
+            type: 'slot',
+            label: 'Right Column'
+          },
+          gap: {
+            type: 'select',
+            label: 'Gap',
+            options: [
+              { label: 'Small', value: 'sm' },
+              { label: 'Medium', value: 'md' },
+              { label: 'Large', value: 'lg' }
+            ]
+          }
+        },
+        defaultProps: {
+          gap: 'md'
+        },
+        render: ({ leftColumn: LeftColumn, centerColumn: CenterColumn, rightColumn: RightColumn, gap }) => {
+          const gapClasses: Record<string, string> = {
+            sm: 'gap-4',
+            md: 'gap-8',
+            lg: 'gap-12'
+          };
+
+          return (
+            <div className={`grid ${gapClasses[gap]} md:grid-cols-3`}>
+              <LeftColumn />
+              <CenterColumn />
+              <RightColumn />
+            </div>
+          );
+        }
+      },
+      Grid: {
+        label: 'Grid',
+        fields: {
+          content: {
+            type: 'slot',
+            label: 'Content'
+          },
+          columns: {
+            type: 'select',
+            label: 'Columns',
+            options: [
+              { label: '2 Columns', value: '2' },
+              { label: '3 Columns', value: '3' },
+              { label: '4 Columns', value: '4' },
+              { label: '5 Columns', value: '5' },
+              { label: '6 Columns', value: '6' }
+            ]
+          },
+          gap: {
+            type: 'select',
+            label: 'Gap',
+            options: [
+              { label: 'Small', value: 'sm' },
+              { label: 'Medium', value: 'md' },
+              { label: 'Large', value: 'lg' }
+            ]
+          }
+        },
+        defaultProps: {
+          columns: '3',
+          gap: 'md'
+        },
+        render: ({ content: Content, columns, gap }) => {
+          const gapClasses: Record<string, string> = {
+            sm: 'gap-4',
+            md: 'gap-6',
+            lg: 'gap-8'
+          };
+
+          const gridCols: Record<string, string> = {
+            '2': 'md:grid-cols-2',
+            '3': 'md:grid-cols-3',
+            '4': 'md:grid-cols-4',
+            '5': 'md:grid-cols-5',
+            '6': 'md:grid-cols-6'
+          };
+
+          return (
+            <div className={`grid ${gapClasses[gap]} ${gridCols[columns]}`}>
+              <Content />
+            </div>
+          );
+        }
+      },
       HeadingBlock: {
         label: 'Heading',
         fields: {
@@ -241,6 +448,10 @@ const PuckEditor = forwardRef<PuckEditorRef, PuckEditorProps>(({ elementorData, 
       }
     },
     categories: {
+      layout: {
+        title: 'Layout',
+        components: ['Container', 'TwoColumn', 'ThreeColumn', 'Grid']
+      },
       typography: {
         title: 'Typography',
         components: ['HeadingBlock', 'TextBlock']

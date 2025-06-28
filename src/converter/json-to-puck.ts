@@ -9,42 +9,127 @@ import {
   REVERSE_WIDGET_MAPPING
 } from '../types';
 
-// Widget type mapping
-const PROPS_MAPPING: Record<string, string> = {
-  'title': 'children',
-  'header_size': 'level',
-  'align': 'alignment',
-  'text': 'children',
-  'editor': 'children'
-};
-
-// Reverse mapping for convertBack
-const REVERSE_PROPS_MAPPING: Record<string, string> = {
-  'children': 'title', 
-  'level': 'header_size',
-  'alignment': 'align',
-  'href': 'url',
-  'variant': 'button_type'
-};
+const LAYOUT_COMPONENTS = ['Container', 'TwoColumn', 'ThreeColumn', 'Grid'];
 
 export class JsonToPuckConverter {
   
-  // Convert Elementor JSON to Puck format
   convert(elementorData: ElementorData): PuckData {
+    const puckElements: PuckElement[] = [];
+    
+    for (const widget of elementorData.content) {
+      if (widget.settings.layout_type && widget.settings.layout_content) {
+        const layoutElement = this.convertLayoutFromElementor(widget);
+        puckElements.push(layoutElement);
+      } else {
+        if (widget.id.includes('TwoColumn') || widget.id.includes('Grid') || widget.id.includes('ThreeColumn')) {
+          continue;
+        }
+        
+        const fixedWidget = this.fixWidgetMismatches(widget);
+        const puckElement = this.convertWidget(fixedWidget);
+        puckElements.push(puckElement);
+      }
+    }
+
     return {
-      content: elementorData.content.map(widget => this.convertWidget(widget)),
+      content: puckElements,
       root: { 
         props: { title: elementorData.title || 'Page Title' }
       }
     };
   }
 
-  // Convert Puck format back to Elementor JSON
   convertBack(puckData: PuckData): ElementorData {
+    const elementorWidgets: ElementorWidget[] = [];
+    
+    for (const element of puckData.content) {
+      if (LAYOUT_COMPONENTS.includes(element.type)) {
+        const layoutWidget = this.convertLayoutToElementor(element);
+        elementorWidgets.push(layoutWidget);
+      } else {
+        const widget = this.convertElementBack(element);
+        elementorWidgets.push(widget);
+      }
+    }
+    
     return {
-      content: puckData.content.map(element => this.convertElementBack(element)),
+      content: elementorWidgets,
       title: puckData.root?.props?.title || 'Untitled'
     };
+  }
+
+  private convertLayoutToElementor(layoutElement: PuckElement): ElementorWidget {
+    const layoutContent = this.extractContentFromLayout(layoutElement);
+    const layoutProps = {
+      type: layoutElement.type,
+      gap: layoutElement.props.gap,
+      ratio: layoutElement.props.ratio,
+      columns: layoutElement.props.columns,
+      maxWidth: layoutElement.props.maxWidth,
+      padding: layoutElement.props.padding
+    };
+
+    return {
+      id: layoutElement.props.id || this.generateElementorId(layoutElement.type),
+      settings: {
+        layout_type: this.getLayoutType(layoutElement.type),
+        layout_content: JSON.stringify(layoutContent),
+        layout_props: JSON.stringify(layoutProps)
+      },
+      widgetType: 'text-editor', // Use text-editor as container
+      elType: 'widget'
+    };
+  }
+
+  private getLayoutType(puckType: string): 'container' | 'two_column' | 'three_column' | 'grid' {
+    switch (puckType) {
+      case 'Container': return 'container';
+      case 'TwoColumn': return 'two_column';
+      case 'ThreeColumn': return 'three_column';
+      case 'Grid': return 'grid';
+      default: return 'container';
+    }
+  }
+
+  private extractContentFromLayout(layoutElement: PuckElement): PuckElement[] {
+    const content: PuckElement[] = [];
+    
+    switch (layoutElement.type) {
+      case 'Container':
+        if (layoutElement.props.content) {
+          content.push(...layoutElement.props.content);
+        }
+        break;
+        
+      case 'TwoColumn':
+        if (layoutElement.props.leftColumn) {
+          content.push(...layoutElement.props.leftColumn);
+        }
+        if (layoutElement.props.rightColumn) {
+          content.push(...layoutElement.props.rightColumn);
+        }
+        break;
+        
+      case 'ThreeColumn':
+        if (layoutElement.props.leftColumn) {
+          content.push(...layoutElement.props.leftColumn);
+        }
+        if (layoutElement.props.centerColumn) {
+          content.push(...layoutElement.props.centerColumn);
+        }
+        if (layoutElement.props.rightColumn) {
+          content.push(...layoutElement.props.rightColumn);
+        }
+        break;
+        
+      case 'Grid':
+        if (layoutElement.props.content) {
+          content.push(...layoutElement.props.content);
+        }
+        break;
+    }
+    
+    return content;
   }
 
   private convertWidget(widget: ElementorWidget): PuckElement {
@@ -61,12 +146,20 @@ export class JsonToPuckConverter {
     const widgetType = REVERSE_WIDGET_MAPPING[element.type] || 'text-editor';
     const settings = this.mapPropsBack(element.props);
     
+    const id = element.props.id || this.generateElementorId(element.type);
+    
     return {
-      id: element.props.id || Math.random().toString(36).substr(2, 8),
+      id,
       settings,
       widgetType,
       elType: 'widget'
     };
+  }
+
+  private generateElementorId(type: string): string {
+    const timestamp = Date.now().toString(36);
+    const random = Math.random().toString(36).substr(2, 8);
+    return `${type}-${timestamp}-${random}`;
   }
 
   private mapProps(settings: ElementorSettings, id: string): PuckProps {
@@ -109,27 +202,40 @@ export class JsonToPuckConverter {
   mapPropsBack(props: PuckProps): ElementorSettings {
     const settings: ElementorSettings = {};
 
-    if (props.children) {
-      if (props.level) {
+    if (props.level) {
+      if (props.children) {
         settings.title = props.children;
-        settings.header_size = props.level;
-      } else if (props.href) {
-        settings.text = props.children;
-        settings.url = props.href;
-        settings.button_type = props.variant || 'primary';
-      } else {
-        settings.editor = props.children;
+      }
+      settings.header_size = props.level;
+      if (props.alignment) {
+        settings.align = props.alignment;
       }
     }
-
-    if (props.alignment) {
-      settings.align = props.alignment;
+    else if (props.href) {
+      if (props.children) {
+        settings.text = props.children;
+      }
+      settings.url = props.href;
+      settings.button_type = props.variant || 'primary';
+      if (props.alignment) {
+        settings.align = props.alignment;
+      }
     }
-
-    if (props.icon) {
+    else if (props.icon) {
       settings.selected_icon = { value: props.icon };
       settings.size = this.mapIconSizeBack(props.size || 'medium');
       settings.color = this.mapIconColorBack(props.color || '#3B82F6');
+      if (props.alignment) {
+        settings.align = props.alignment;
+      }
+    }
+    else {
+      if (props.children) {
+        settings.editor = props.children;
+      }
+      if (props.alignment) {
+        settings.align = props.alignment;
+      }
     }
 
     return settings;
@@ -173,5 +279,78 @@ export class JsonToPuckConverter {
       case '#FFFFFF': return 'white';
       default: return 'primary';
     }
+  }
+
+  private convertLayoutFromElementor(widget: ElementorWidget): PuckElement {
+    try {
+      const layoutContent = JSON.parse(widget.settings.layout_content || '[]');
+      const layoutProps = JSON.parse(widget.settings.layout_props || '{}');
+      
+      const convertedContent = layoutContent.map((item: any) => {
+        if (typeof item === 'object' && item.type) {
+          return item; 
+        } else {
+          return this.convertWidget(item);
+        }
+      });
+
+      const layoutType = layoutProps.type || 'Container';
+      const props: any = {
+        id: widget.id,
+        gap: layoutProps.gap || 'md',
+        ratio: layoutProps.ratio || '1fr 1fr',
+        columns: layoutProps.columns || '3',
+        maxWidth: layoutProps.maxWidth || 'lg',
+        padding: layoutProps.padding || 'md'
+      };
+
+      switch (layoutType) {
+        case 'TwoColumn':
+          const midPoint = Math.ceil(convertedContent.length / 2);
+          props.leftColumn = convertedContent.slice(0, midPoint);
+          props.rightColumn = convertedContent.slice(midPoint);
+          break;
+        case 'ThreeColumn':
+          const third = Math.ceil(convertedContent.length / 3);
+          props.leftColumn = convertedContent.slice(0, third);
+          props.centerColumn = convertedContent.slice(third, third * 2);
+          props.rightColumn = convertedContent.slice(third * 2);
+          break;
+        case 'Grid':
+          props.content = convertedContent;
+          break;
+        default: 
+          props.content = convertedContent;
+          break;
+      }
+
+      return {
+        type: layoutType,
+        props
+      };
+    } catch (error) {
+      console.error('Error converting layout from Elementor:', error);
+      return {
+        type: 'Container',
+        props: {
+          id: widget.id,
+          content: []
+        }
+      };
+    }
+  }
+
+  private fixWidgetMismatches(widget: ElementorWidget): ElementorWidget {
+    if (widget.widgetType === 'button' && widget.settings.editor && !widget.settings.text) {
+      return {
+        ...widget,
+        settings: {
+          ...widget.settings,
+          text: widget.settings.editor,
+          editor: undefined
+        }
+      };
+    }
+    return widget;
   }
 }

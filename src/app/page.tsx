@@ -89,7 +89,7 @@ export default function Home() {
 
         <div className="flex flex-col sm:flex-row gap-6 justify-center mb-8">
           <Link
-            href="/editor"
+            href="/test-converter"
             className="group bg-gradient-to-r from-green-600 to-green-700 text-white px-10 py-5 rounded-2xl font-bold text-xl hover:from-green-700 hover:to-green-800 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105"
           >
             <span className="flex items-center justify-center">

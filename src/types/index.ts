@@ -18,6 +18,9 @@ export interface ElementorSettings {
   };
   size?: 'sm' | 'md' | 'lg' | 'xl';
   color?: 'primary' | 'secondary' | 'gray' | 'white';
+  layout_type?: 'container' | 'two_column' | 'three_column' | 'grid';
+  layout_content?: any;
+  layout_props?: any;
 }
 
 export interface ElementorData {
@@ -40,6 +43,15 @@ export interface PuckProps {
   icon?: string;
   size?: 'small' | 'medium' | 'large';
   color?: string;
+  content?: PuckElement[];
+  leftColumn?: PuckElement[];
+  rightColumn?: PuckElement[];
+  centerColumn?: PuckElement[];
+  maxWidth?: 'full' | 'lg' | 'md' | 'sm';
+  padding?: 'none' | 'sm' | 'md' | 'lg';
+  gap?: 'sm' | 'md' | 'lg';
+  ratio?: string;
+  columns?: '2' | '3' | '4' | '5' | '6';
 }
 
 export interface PuckData {
